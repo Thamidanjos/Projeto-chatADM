@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatPDF</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            text-align: center;
+        }
+        h1, h3, h2 {
+           color: #333; 
+        }
+        #questionInput {
+            width: 80%;
+            padding: 15px;
+            font-size: 18px;
+            margin-top: 20px;
+            margin-bottom: 20px;
+            border: 2px solid #4CAF50;
+            border-radius: 5px;
+        }
+        #sendButton {
+            font-size: 18px;
+            padding: 15px 30px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #sendButton:hover {
+            background-color: #45a049;
+        }
+        #output {
+            margin-top: 20px;
+        }
+        .header-image {
+            width: 20%;
+            max-width: 200px;
+            height: auto;
+        }
+        .highlight {
+            background-color: #ffff99;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <center>
+        <div class="image-container">
+            <img class="header-image" src="https://governanca.cfa.org.br/wp-content/uploads/2024/07/Black-White-Minimalist-Letter-MC-Logo-2.png" alt="Header Image" />
+        </div>
+        <input id="questionInput" type="text" placeholder="Digite aqui sua pergunta" />
+        <button id="sendButton" onclick="handleQuestion()">Enviar</button>
+        <h6>ChatPDF pode cometer erros. Considere verificar informações importantes.</h6>
+    </center>
+    <div id="output"></div>
+
+    <script>
+        const API_KEY = 'sec_s73pssY1HgLd8kc4o91k6jsOqjS3eu4q';
+        const UPLOAD_URL = 'https://api.chatpdf.com/v1/sources/add-file';
+        const CHAT_URL = 'https://api.chatpdf.com/v1/chats/message';
+        const file_paths = [
+            'https://raw.githubusercontent.com/Thamidanjos/Resolu-o-01/main/Resolu%C3%A7%C3%A3o%20_603%2C%20606%2C%20609%2C%20619%2C%20621%20.pdf',
+            'https://raw.githubusercontent.com/Thamidanjos/Resolu-o-02/main/RESOLU%C3%87%C3%95ES%20625%2C%20629%2C%20632.pdf',
+            'https://raw.githubusercontent.com/Thamidanjos/Resolu-o-03/main/Resolu%C3%A7%C3%B5es%20633%2C%20635%2C%20636.pdf',
+            'https://raw.githubusercontent.com/Thamidanjos/Resolu-o-04/main/Resolu%C3%A7%C3%B5es%20638%2C%20639%2C%20640%20.pdf',
+            'https://raw.githubusercontent.com/Thamidanjos/Resolu-o-05/main/Resolu%C3%A7%C3%B5es%20641%2C%20643.pdf',
+            'https://raw.githubusercontent.com/Thamidanjos/Resolu-o-06/main/Resolu%C3%A7%C3%B5es%20645%2C%20647%2C%20648%2C%20649.pdf',
+            'https://raw.githubusercontent.com/Thamidanjos/Resolu-o-07/main/_Resolu%C3%A7%C3%A3o%20%20653.pdf'
+        ];
+        let sourceIds = [];
+        let displayedFilePaths = new Set();
+
+        const pageToResolutionMap = {
+            0: {
+                '1-10': "Resolução Normativa CFA Nº 603",
+                '11-14': "Resolução Normativa CFA Nº 606",
+                '15-16': "Resolução Normativa CFA Nº 609",
+                '17-25':"Resolução Normativa CFA Nº 619",
+                '26-27':"Resolução Normativa CFA Nº 621"
+            },
+            1: {
+                '1-25': "Resolução Normativa CFA Nº 625",
+                '26-27': "Resolução Normativa CFA Nº 629",
+                '28-32': "Resolução Normativa CFA Nº 632"
+            },
+            2:{
+                '1-9': 'Resolução Normativa CFA Nº 633',
+                '10-21': 'Resolução Normativa CFA Nº 635',
+                '22-33': 'Resolução Normativa CFA Nº 636'
+            },
+            3:{
+                '1-18': 'Resolução Normativa CFA Nº 638',
+                '19-30': 'Resolução Normativa CFA Nº 639',
+                '31-39': 'Resolução Normativa CFA Nº 640'
+            },
+            4:{
+                '1-12': 'Resolução Normativa CFA Nº 641',
+                '13-37': 'Resolução Normativa CFA Nº 643'
+            },
+            5:{
+                '1-3': 'Resolução Normativa CFA Nº 645',
+                '4-6': 'Resolução Normativa CFA Nº 647',
+                '7-10': 'Resolução Normativa CFA Nº 648',
+                '11-57':'Resolução Normativa CFA Nº 649'
+            },
+            6:{
+                '1-24':'Resolução Normativa CFA Nº 653'
+            }
+        };
+
+        async function uploadPdfs() {
+            for (const file_path of file_paths) {
+                try {
+                    const response = await fetch(file_path);
+                    if (response.ok) {
+                        const blob = await response.blob();
+                        const formData = new FormData();
+                        formData.append('file', blob, 'Base Resoluções IA.pdf');
+
+                        const uploadResponse = await fetch(UPLOAD_URL, {
+                            method: 'POST',
+                            headers: {
+                                'x-api-key': API_KEY
+                            },
+                            body: formData
+                        });
+                        const uploadData = await uploadResponse.json();
+                        if (uploadData.sourceId) {
+                            sourceIds.push(uploadData.sourceId);
+                        } else {
+                            console.error('Erro ao obter o Source ID:', uploadData);
+                        }
+                    } else {
+                        console.error('Erro ao carregar o arquivo PDF:', file_path);
+                    }
+                } catch (error) {
+                    console.error('Erro ao processar o arquivo:', file_path, error);
+                }
+            }
+            if (sourceIds.length > 0) {
+                document.getElementById('output').innerHTML += `Source IDs carregados com sucesso.<br>`;
+            } else {
+                document.getElementById('output').innerHTML += `Erro: Nenhum Source ID foi carregado.<br>`;
+            }
+        }
+
+        async function handleQuestion() {
+            const question = document.getElementById('questionInput').value;
+            const outputDiv = document.getElementById('output');
+            outputDiv.innerHTML = '';
+            displayedFilePaths.clear();
+            let responseCount = 0;
+
+            if (question.trim() !== '' && sourceIds.length > 0) {
+                for (let i = 0; i < sourceIds.length; i++) {
+                    if (responseCount >= 1) break;
+
+                    const sourceId = sourceIds[i];
+                    const payload = {
+                        sourceId: sourceId,
+                        referenceSources: true,
+                        messages: [{ 'role': 'user', 'content': question }]
+                    };
+                    try {
+                        const response = await fetch(CHAT_URL, {
+                            method: 'POST',
+                            headers: {
+                                'x-api-key': API_KEY,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(payload)
+                        });
+                        const data = await response.json();
+                        const correctAnswer = data.content;
+
+                        const startsWithSpecificPhrase = correctAnswer.startsWith("A fonte ") ||
+                                                          correctAnswer.startsWith("O documento ");
+
+                        const isCorrect = !startsWithSpecificPhrase;
+                        if (isCorrect) {
+                            displayResponse(correctAnswer, data.references, file_paths[i], i);
+                            responseCount++;
+                        }
+                    } catch (error) {
+                        console.error('Erro ao buscar resposta:', error);
+                    }
+                }
+            } else if (sourceIds.length === 0) {
+                outputDiv.innerHTML = 'Erro: Nenhum Source ID encontrado. Tente recarregar a página.';
+            }
+        }
+
+        function getResolutionByPage(pageNumber, pdfIndex) {
+            const map = pageToResolutionMap[pdfIndex];
+            if (!map) {
+                return 'Resolução desconhecida';
+            }
+
+            for (const range in map) {
+                const [start, end] = range.split('-').map(Number);
+                if (pageNumber >= start && pageNumber <= end) {
+                    return map[range];
+                }
+            }
+
+            return 'Resolução desconhecida';
+        }
+
+        function displayResponse(answer, references, filePath, pdfIndex) {
+            const outputDiv = document.getElementById('output');
+            const referencesText = generateReferencesText(references, pdfIndex);
+
+            outputDiv.innerHTML += `
+                <h3>Resposta</h3>
+                <p>${answer}</p>
+                ${referencesText}
+            `;
+
+            if (!displayedFilePaths.has(filePath)) {
+                outputDiv.innerHTML += `<a href="${filePath}" download>Baixar PDF</a><br><br>`;
+                displayedFilePaths.add(filePath);
+            }
+        }
+
+        function generateReferencesText(references, pdfIndex) {
+            if (!references || references.length === 0) return '';
+
+            const referencesList = references.map(ref => {
+                const resolution = getResolutionByPage(ref.pageNumber, pdfIndex);
+                return `<li>Página ${ref.pageNumber} - ${resolution}</li>`;
+            }).join('');
+
+            return `<h4>Referências:</h4><ul>${referencesList}</ul>`;
+        }
+
+        window.onload = uploadPdfs;
+    </script>
+</body>
+</html>
