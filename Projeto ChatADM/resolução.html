@@ -46,6 +46,24 @@
             background-color: #ffff99;
             font-weight: bold;
         }
+        #loadingSpinner {
+            display: none;
+            margin: 20px auto;
+            width: 50px;
+            height: 50px;
+            border: 6px solid transparent;
+            border-top: 6px solid #4CAF50;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
     </style>
 </head>
 <body>
@@ -57,6 +75,8 @@
         <button id="sendButton" onclick="handleQuestion()">Enviar</button>
         <h6>ChatPDF pode cometer erros. Considere verificar informações importantes.</h6>
     </center>
+     <!-- Spinner de carregamento -->
+     <div id="loadingSpinner"></div>
     <div id="output"></div>
 
     <script>
@@ -152,6 +172,10 @@
         async function handleQuestion() {
             const question = document.getElementById('questionInput').value;
             const outputDiv = document.getElementById('output');
+            
+            // Exibe o spinner de carregamento
+            document.getElementById('loadingSpinner').style.display = 'block';
+            document.getElementById('output').classList.add('show-scroll');
             outputDiv.innerHTML = '';
             displayedFilePaths.clear();
             let responseCount = 0;
@@ -193,6 +217,9 @@
             } else if (sourceIds.length === 0) {
                 outputDiv.innerHTML = 'Erro: Nenhum Source ID encontrado. Tente recarregar a página.';
             }
+
+           
+            document.getElementById('loadingSpinner').style.display = 'none';
         }
 
         function getResolutionByPage(pageNumber, pdfIndex) {
@@ -215,7 +242,7 @@
             const outputDiv = document.getElementById('output');
             const referencesText = generateReferencesText(references, pdfIndex);
 
-            outputDiv.innerHTML += `
+            outputDiv.innerHTML += ` 
                 <h3>Resposta</h3>
                 <p>${answer}</p>
                 ${referencesText}
